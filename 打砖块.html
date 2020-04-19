@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>打砖块小游戏</title>
+	<style type="text/css">
+		*{
+			margin: 0;
+			padding: 0;
+		}
+		body{
+			background-color: #cecece;
+		}
+		#leftBorder{
+			width: 280px;
+			height: 500px;
+			background-color: #B27500;
+			border-radius: 20px;
+			margin: 30px;
+			float: left;
+		}
+		#divLeft{
+			width: 260px;
+			height: 480px;
+			background-color: #cecece;
+			border-radius: 20px;
+			margin: 10px;
+			float: left;
+		}
+		#BoxBorder{
+			width: 800px;
+			height: 560px;
+			background-color: #B27500;
+			border-radius: 20px;
+			margin: 30px;
+			float: left;
+		}
+		#divBox{
+			width: 760px;
+			height: 520px;
+			background-color: white;
+			border-radius: 6px;
+			margin: 20px;
+			position: relative;
+			float: left;
+		}
+		#GameTime{
+			font-size: 28px;
+			color: red;
+			margin-left: 20px;
+		}
+		#GameScore{
+			font-size: 28px;
+			margin-left: 20px;
+		}
+		#GameRule{
+			text-align: center;
+			margin-top: 20px;
+		}
+		#GameRule p{
+			font-size: 19px;
+			color: black;
+			text-align: center;
+			margin-top: 10px;
+		}
+	</style>
+</head>
+<body>
+	<div id="leftBorder">
+		<div id="divLeft">
+			<!-- 游戏分数 -->
+			<div id="GameScore">
+				<span style="font-weight: bold;color: black;">分数：</span>
+				<span id="Score">--</span>
+			</div>
+			<!-- 游戏时间 -->
+			<div id="GameTime">
+				<span style="font-weight: bold;color: black;">时间：</span>
+				<span id="Minutes">-- </span>:
+				<span id="Seconds">--</span>
+			</div>
+			<div id="GameRule">
+				<p style="font-size: 28px;">游戏规则</p>
+				<p>1.单击空格键开始游戏；</p>
+				<p>2.键盘左右方向键可以控制挡板左右移动；</p>
+				<p>3.单击shift重新开始游戏；</p>
+				<p>4.当所有砖块都消失时，即可赢得游戏</p>
+			</div>
+	    </div>
+	</div>
+	<div id="BoxBorder">
+		<div id="divBox">
+			<!-- 方块 -->
+			<div id="square"></div>
+			<!-- 小球 -->
+			<div id="ball"></div>
+			<!-- 挡板 -->
+			<div id="board"></div>
+		</div>
+	</div>
+</body>
+</html>
+<script type="text/javascript">
+	var i;
+	var topY=[];
+	var leftX=[];
+	var time;//小球运动计时器
+	var GameTime;//游戏时间运动计时器
+	var Score=0;
+	window.onload=function(){
+		var square=$("square");
+		var ball=$("ball");
+		var board=$("board");
+		// 创建方块
+		var oDiv=CreateSquare(square);
+		// 方块的显示
+		SquareAccording();
+		// 小球样式
+		BallStyle(ball,oDiv);
+		// 创建挡板
+		BoardStyle(board);
+		
+		// 控制挡板接小球
+		Control_Ball_Board(board,ball);
+	}
+	function $(id){
+		return document.getElementById(id);
+	}
+	// 创建方块
+	function CreateSquare(square){
+		var top=2,left=2;
+		for(i=0;i<99;i++){
+			var oDiv=document.createElement("div");
+			oDiv.style.width=80+"px";
+			oDiv.style.height=20+"px";
+			// oDiv.style.background=RandomColor();
+			oDiv.style.borderRadius=6+"px";
+			oDiv.style.position="absolute";
+			oDiv.style.top=top+"px";
+			oDiv.style.left=left+"px";
+			leftX.push(left);
+			topY.push(top);
+			square.appendChild(oDiv);
+			left+=84;
+			if(i==8||i==17||i==26||i==35||i==44||i==53||i==62||i==71||i==80||i==89){
+				top+=22;
+				left=2;
+			}
+		}
+		return oDiv;
+	}
+	// 小球的样式
+	function BallStyle(ball){
+		var bottom=20,ballLeft=220;
+		ball.style.width=20+"px";
+		ball.style.height=20+"px";
+		ball.style.background="black";
+		ball.style.borderRadius="50%";
+		ball.style.position="absolute";
+		ball.style.bottom=bottom+"px";
+		ball.style.left=ballLeft+"px";
+	}
+	// 创建挡板
+	function BoardStyle(board){
+		var boardLeft=180;
+		board.style.width=160+"px";
+		board.style.height=20+"px";
+		board.style.color="#888888";
+		board.style.background="#888888";
+		board.style.borderRadius=6+"px";
+		board.style.position="absolute";
+		board.style.bottom=0+"px";
+		board.style.left=boardLeft+"px";
+	}
+	// 方块随机颜色
+	function RandomColor(){
+		var r=Math.floor(Math.random()*256);
+		var g=Math.floor(Math.random()*256);
+		var b=Math.floor(Math.random()*256);
+		return "rgb("+r+","+g+","+b+")"
+	}
+	// 方块呈波浪形显示
+	function SquareAccording(){
+		var Squares=$("square").getElementsByTagName('div');
+		var n=0;
+		var S=setInterval(function(){
+			var m=n;
+			for(i=0;i<11;i++){
+				Squares[m].style.background=RandomColor();
+				m=m+9;
+			}
+			n++;
+			if(n==9){
+				clearInterval(S);
+			}
+		},100)
+	}
+	// 左右按钮控制未开始游戏时候的挡板与小球
+	function Control_Ball_Board(board,ball,oDiv){
+		var boardLeft=180,ballLeft=220;
+		var space=false;          //是否开始游戏
+		document.onkeydown=function(e){
+		    var evt = e || event;
+		    if(evt.keyCode==37){ //左
+		    	if(boardLeft>0){
+		    		boardLeft-=10;
+		    		board.style.left=boardLeft+"px";
+		    		board.innerHTML=boardLeft;
+
+		    	}
+		    	if(boardLeft>0&&space==false){
+		    		ballLeft-=10;
+		    		ball.style.left=ballLeft+"px";
+		    	}
+		    }
+		    if(evt.keyCode==39){ //右
+		    	if(boardLeft<600){
+		    		boardLeft+=10;
+		    		board.style.left=boardLeft+"px";
+		    		board.innerHTML=boardLeft;
+		    	}
+		    	if(boardLeft<600&&space==false){	
+		    		ballLeft+=10;	
+		    		ball.style.left=ballLeft+"px";
+		    	}
+		    }
+		    if(evt.keyCode==32){
+	    		// 游戏开始
+	    		if(space==false){
+	    			DirectionBall(ball,board,20,ballLeft);
+	    			// 设置页面左边框里面的值
+	    			SetLeftBorder();
+	    		}
+	    		space=true; //开始游戏
+		    }
+		    if(evt.keyCode==16){
+		    	self.location.reload();
+		    }
+		}
+	}
+	
+	// 改变小球方向
+	function DirectionBall(ball,board,bottom,left){
+		// X方向与Y方向运动增加值
+		var X=left,Y=bottom,AddX,AddY;
+		// speed=Math.floor(Math.random()*3+1)*10;
+		AddX=2;
+		AddY=2;
+		var theBreak=[];
+		if(bottom==20){
+			time=setInterval(function(){
+				X+=AddX;
+				Y+=AddY;
+				
+				ball.style.left=X+"px";
+				ball.style.bottom=Y+"px";
+				if(X>=740){AddX=-AddX;}
+				if(Y>=500){AddY=-AddY;}
+				if(X<=0){AddX=-AddX;}
+				if(Y<=20){
+					if(X-board.innerHTML>0&&X-board.innerHTML<160){
+						AddY=-AddY;
+					}
+				}
+				if(Y<=-2){
+					var Squares=$("square").getElementsByTagName('div');
+					for(i=0;i<Squares.length;i++){
+						if(topY[i]!="#"){
+							Squares[i].style.background="grey";
+						}
+					}
+					var span=document.createElement("div");
+					span.innerHTML="Good Game!";
+					$("divBox").appendChild(span);
+					span.style.fontWeight="bold";
+					span.style.color="red";
+					span.style.textAlign="center";
+					span.style.marginTop=260+"px";
+					var fontSize=0;
+					var S=setInterval(function(){
+						fontSize+=0.5;
+						if(fontSize<=36){
+							span.style.fontSize=fontSize+"px";
+						}else{
+							clearInterval(S);
+						}
+						
+					},10)
+					// 小球停止运动
+					clearInterval(time);
+					// 结束游戏时间计时器
+					clearInterval(GameTime);
+				}
+				for(i=0;i<leftX.length;i++){
+					if(X-leftX[i]>=0&&X-leftX[i]<=80){
+						if(topY[i]==480-Y&&topY[i]!="#"){
+							var Squares=$("square").getElementsByTagName('div');
+							Squares[i].style.background="white";
+							Squares[i].style.color="white";
+							topY.splice(i,1,"#");
+							AddY=-AddY;
+							// 游戏分数
+							$("Score").innerHTML=ShowNum(++Score);
+						}
+					}
+				}
+			},10)
+		}
+	}
+	// 设置游戏时间
+	function SetLeftBorder(){
+		var time=0;
+		GameTime=setInterval(function(){
+			time++;
+			$("Minutes").innerHTML=ShowNum(Math.floor(time/60));
+			$("Seconds").innerHTML=ShowNum(Math.floor(time%60));
+		},500)
+	}
+	// 游戏时间显示格式
+	function ShowNum(num){
+		if(num<10){
+			return "0"+num;
+		}else{
+			return num;
+		}
+	}
+</script>
